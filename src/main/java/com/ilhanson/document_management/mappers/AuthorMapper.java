@@ -12,19 +12,19 @@ import org.springframework.stereotype.Component;
 public class AuthorMapper {
     private final ModelMapper modelMapper;
 
-    public AuthorDTO toDTO(Author author) {
+    public AuthorDTO mapToDTO(Author author) {
         return modelMapper.map(author, AuthorDTO.class);
     }
 
-    public AuthorDetailsDTO toDetailsDTO(Author author) {
+    public AuthorDetailsDTO mapToDetailsDTO(Author author) {
         return modelMapper.map(author, AuthorDetailsDTO.class);
     }
 
-    public Author toModel(AuthorDTO author) {
+    public Author mapToModel(AuthorDTO author) {
         return modelMapper.map(author, Author.class);
     }
 
-    public Author toModel(AuthorDetailsDTO author) {
+    public Author mapToModel(AuthorDetailsDTO author) {
         return modelMapper.map(author, Author.class);
     }
 }

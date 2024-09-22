@@ -1,6 +1,5 @@
 package com.ilhanson.document_management.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,7 +43,6 @@ public class Author {
             joinColumns = @JoinColumn(name = "author_id"),
             inverseJoinColumns = @JoinColumn(name = "document_id")
     )
-    @JsonIgnoreProperties("authors")
     private final Set<Document> documents = new HashSet<>();
 
     // As the owner of the relationship

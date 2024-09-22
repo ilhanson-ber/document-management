@@ -12,19 +12,19 @@ import org.springframework.stereotype.Component;
 public class DocumentMapper {
     private final ModelMapper modelMapper;
 
-    public DocumentDTO toDTO(Document document) {
+    public DocumentDTO mapToDTO(Document document) {
         return modelMapper.map(document, DocumentDTO.class);
     }
 
-    public DocumentDetailsDTO toDetailsDTO(Document document) {
+    public DocumentDetailsDTO mapToDetailsDTO(Document document) {
         return modelMapper.map(document, DocumentDetailsDTO.class);
     }
 
-    public Document toModel(DocumentDTO document) {
+    public Document mapToModel(DocumentDTO document) {
         return modelMapper.map(document, Document.class);
     }
 
-    public Document toModel(DocumentDetailsDTO document) {
+    public Document mapToModel(DocumentDetailsDTO document) {
         return modelMapper.map(document, Document.class);
     }
 }

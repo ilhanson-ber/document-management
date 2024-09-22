@@ -1,6 +1,5 @@
 package com.ilhanson.document_management.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -39,7 +38,6 @@ public class Document {
     private String body;
 
     @ManyToMany(mappedBy = "documents")
-    @JsonIgnoreProperties("documents")
     private final Set<Author> authors = new HashSet<>();
 
     @ManyToMany
@@ -48,11 +46,9 @@ public class Document {
             joinColumns = @JoinColumn(name = "document_id"),
             inverseJoinColumns = @JoinColumn(name = "reference_id")
     )
-    @JsonIgnoreProperties({"references", "referredBy", "authors"})
     private final Set<Document> references = new HashSet<>();
 
     @ManyToMany(mappedBy = "references")
-    @JsonIgnoreProperties({"references", "referredBy", "authors"})
     private final Set<Document> referredBy = new HashSet<>();
 
     // As the owner of the relationship

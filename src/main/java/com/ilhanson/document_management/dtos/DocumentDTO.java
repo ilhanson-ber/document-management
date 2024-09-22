@@ -1,4 +1,16 @@
 package com.ilhanson.document_management.dtos;
 
-public record DocumentDTO(Long id, String title, String body) {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class DocumentDTO {
+    private Long id;
+    private String title;
+    private String body;
 }
