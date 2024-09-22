@@ -15,6 +15,16 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+// We need to provide customized equals and hashCode methods
+// because we use equality checks when operating on a Set<>
+// to manage the entity associations
+// WARNING: Lombok's @EqualsAndHashCode treats two objects
+// with null value as the same. This might be problematic
+// if we ever want to add two null id objects to the Set
+// at the same time - potentially making use of
+// automatic persist and merge cascading.
+// In that case, replace these methods with a version supporting
+// a better comparison for null id objects
 public class Document {
 
     @Id
@@ -59,11 +69,12 @@ public class Document {
         document.getReferredBy().remove(this);
     }
 
-    // Removes the associations where the document
-    // is not the owner of the relationship
+    // Removes the data associations where the document
+    // is not the owner of the relationship.
     // For owners, JPA takes care of it while removal
-    // For referencing ones, we need to do it manually before removal
-    public void prepareForRemoval() {
+    // For referencing ones (using mappedBy), we need to do it manually before removal
+    @PreRemove
+    private void prepareForRemoval() {
         this.authors.forEach(author -> author.getDocuments().remove(this));
         this.authors.clear();
 

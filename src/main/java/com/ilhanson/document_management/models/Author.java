@@ -14,6 +14,16 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+// We need to provide customized equals and hashCode methods
+// because we use equality checks when operating on a Set<>
+// to manage the entity associations
+// WARNING: Lombok's @EqualsAndHashCode treats two objects
+// with null value as the same. This might be problematic
+// if we ever want to add two null id objects to the Set
+// at the same time - potentially making use of
+// automatic persist and merge cascading.
+// In that case, replace these methods with a version supporting
+// a better comparison for null id objects
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Author {
 
