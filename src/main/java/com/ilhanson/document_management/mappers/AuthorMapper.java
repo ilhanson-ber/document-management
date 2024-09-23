@@ -1,7 +1,9 @@
 package com.ilhanson.document_management.mappers;
 
+import com.ilhanson.document_management.dtos.AuthorCreateDTO;
 import com.ilhanson.document_management.dtos.AuthorDTO;
 import com.ilhanson.document_management.dtos.AuthorDetailsDTO;
+import com.ilhanson.document_management.dtos.AuthorUpdateDTO;
 import com.ilhanson.document_management.models.Author;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -20,11 +22,11 @@ public class AuthorMapper {
         return modelMapper.map(author, AuthorDetailsDTO.class);
     }
 
-    public Author mapToModel(AuthorDTO author) {
+    public Author mapToModel(AuthorCreateDTO author) {
         return modelMapper.map(author, Author.class);
     }
 
-    public Author mapToModel(AuthorDetailsDTO author) {
+    public Author mapToModel(AuthorUpdateDTO author) {
         return modelMapper.map(author, Author.class);
     }
 }
