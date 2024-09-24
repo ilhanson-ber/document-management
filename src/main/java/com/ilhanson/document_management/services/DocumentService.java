@@ -1,6 +1,9 @@
 package com.ilhanson.document_management.services;
 
-import com.ilhanson.document_management.dtos.*;
+import com.ilhanson.document_management.dtos.DocumentCreateDTO;
+import com.ilhanson.document_management.dtos.DocumentDTO;
+import com.ilhanson.document_management.dtos.DocumentDetailsDTO;
+import com.ilhanson.document_management.dtos.DocumentUpdateDTO;
 import com.ilhanson.document_management.exceptions.AssociationConflictException;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.DocumentMapper;
@@ -14,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,20 +47,13 @@ public class DocumentService {
 
     @Transactional
     public DocumentDetailsDTO createDocument(DocumentCreateDTO documentDTOInput) {
-        Document document = documentMapper.mapToModel(documentDTOInput);
+        Document documentInput = documentMapper.mapToModel(documentDTOInput);
+        Document document = new Document();
 
-        List<IdInputDTO> requestedAuthorIds = documentDTOInput.getAuthors();
-        // we need a null check because author list is not
-        // mandatory in document create request
-        // (in contrast to update request)
-        if (requestedAuthorIds != null && !requestedAuthorIds.isEmpty()) {
-            associateAuthorsWithDocument(getIdsFromUserInput(requestedAuthorIds), document);
-        }
-
-        List<IdInputDTO> requestedReferenceIds = documentDTOInput.getReferences();
-        if (requestedReferenceIds != null && !requestedReferenceIds.isEmpty()) {
-            associateReferencesWithDocument(getIdsFromUserInput(requestedReferenceIds), document);
-        }
+        document.setTitle(documentInput.getTitle());
+        document.setBody(documentInput.getBody());
+        associateAuthorsWithDocument(documentInput.getAuthors(), document);
+        associateReferencesWithDocument(documentInput.getReferences(), document);
 
         Document savedDocument = documentRepository.save(document);
         return documentMapper.mapToDetailsDTO(savedDocument);
@@ -71,116 +66,130 @@ public class DocumentService {
 
         document.setTitle(documentInput.getTitle());
         document.setBody(documentInput.getBody());
-
-        List<Long> requestedAuthorIds = getIdsFromUserInput(documentDTOInput.getAuthors());
-        associateAuthorsWithDocument(requestedAuthorIds, document);
-
-        List<Long> requestedReferenceIds = getIdsFromUserInput(documentDTOInput.getReferences());
-        associateReferencesWithDocument(requestedReferenceIds, document);
+        associateAuthorsWithDocument(documentInput.getAuthors(), document);
+        associateReferencesWithDocument(documentInput.getReferences(), document);
 
         Document savedDocument = documentRepository.save(document);
         return documentMapper.mapToDetailsDTO(savedDocument);
     }
 
-    private void associateAuthorsWithDocument(List<Long> requestedAuthorIds, Document document) {
-        List<Author> requestedAuthors = authorRepository.findAllById(requestedAuthorIds);
-        validateRequestedAuthorsExistsOrThrow(requestedAuthors, requestedAuthorIds);
+    private void associateAuthorsWithDocument(Set<Author> authorsFromClient, Document document) {
+        // we need to clone (freeze) the current state
+        // because we will modify the state while we are
+        // adding and removing associations
+        // otherwise: ConcurrentModificationException
+        Set<Author> authorsBeforeRequest = document.getAuthors();
 
-        Set<Author> beforeRequestAuthors = new HashSet<>(document.getAuthors());
+        if (authorsFromClient == null) authorsFromClient = new HashSet<>();
 
-        Set<Long> requestedAuthorsIdSet = new HashSet<>(requestedAuthorIds);
-        Set<Long> beforeRequestAuthorsIdSet = beforeRequestAuthors.stream()
-                .map(Author::getId)
-                .collect(Collectors.toSet());
+        // associations did not change, exit from here
+        if (authorsFromClient.equals(authorsBeforeRequest)) return;
 
-        // author list did not change, exit from here
-        if (requestedAuthorsIdSet.equals(beforeRequestAuthorsIdSet)) return;
+        List<Author> authorsFromRepo = authorRepository.findAllById(
+                authorsFromClient.stream()
+                        .map(Author::getId)
+                        .collect(Collectors.toList()));
 
-        Set<Long> authorIdsToAdd = new HashSet<>(requestedAuthorsIdSet);
-        authorIdsToAdd.removeAll(beforeRequestAuthorsIdSet);
+        validateRequestedAuthorsExistsOrThrow(authorsFromRepo, authorsFromClient);
 
-        Set<Long> authorIdsToRemove = new HashSet<>(beforeRequestAuthorsIdSet);
-        authorIdsToRemove.removeAll(requestedAuthorsIdSet);
+        Set<Author> authorsToAdd = new HashSet<>(authorsFromClient);
+        authorsToAdd.removeAll(authorsBeforeRequest);
 
-        // will be used to quick lookup for authors
-        Map<Long, Author> authorMap = requestedAuthors.stream()
-                .collect(Collectors.toMap(Author::getId, author -> author));
+        Set<Author> authorsToRemove = new HashSet<>(authorsBeforeRequest);
+        authorsToRemove.removeAll(authorsFromClient);
 
         // because authors are the owner of the author - document relationship
         // we need to update the author list for the current document
         // by adding or removing the document from authors
 
-        for (Long id : authorIdsToAdd) {
-            authorMap.get(id).addDocument(document);
+        // add new documents to the author
+        for (Author author : authorsFromRepo) {
+            if (authorsToAdd.contains(author)) {
+                author.addDocument(document);
+            }
         }
 
-        for (Long id : authorIdsToRemove) {
-            authorMap.get(id).removeDocument(document);
+        for (Author author : authorsBeforeRequest) {
+            if (authorsToRemove.contains(author)) {
+                author.removeDocument(document);
+            }
         }
     }
 
-    private void associateReferencesWithDocument(List<Long> requestedReferenceIds, Document document) {
-        List<Document> requestedDocuments = documentRepository.findAllById(requestedReferenceIds);
-        validateRequestedReferencesExistsOrThrow(requestedDocuments, requestedReferenceIds);
-        validateNoSelfReferencingOrThrow(requestedReferenceIds, document);
+    private void associateReferencesWithDocument(Set<Document> referencesFromClient, Document document) {
+        // we need to clone (freeze) the current state
+        // because we will modify the state while we are
+        // adding and removing associations
+        // otherwise: ConcurrentModificationException
+        Set<Document> referencesBeforeRequest = document.getReferences();
 
-        Set<Document> beforeRequestReferences = new HashSet<>(document.getReferences());
+        if (referencesFromClient == null) referencesFromClient = new HashSet<>();
 
-        Set<Long> requestedReferencesIdSet = new HashSet<>(requestedReferenceIds);
-        Set<Long> beforeRequestDocumentsIdSet = beforeRequestReferences.stream()
-                .map(Document::getId)
-                .collect(Collectors.toSet());
+        // associations did not change, exit from here
+        if (referencesFromClient.equals(referencesBeforeRequest)) return;
 
-        // document list did not change, exit from here
-        if (requestedReferencesIdSet.equals(beforeRequestDocumentsIdSet)) return;
+        List<Document> referencesFromRepo = documentRepository.findAllById(
+                referencesFromClient.stream()
+                        .map(Document::getId)
+                        .collect(Collectors.toList()));
 
-        Set<Long> documentIdsToAdd = new HashSet<>(requestedReferencesIdSet);
-        documentIdsToAdd.removeAll(beforeRequestDocumentsIdSet);
+        validateRequestedReferencesExistsOrThrow(referencesFromRepo, referencesFromClient);
+        validateNoSelfReferencingOrThrow(referencesFromClient, document);
 
-        Set<Long> documentIdsToRemove = new HashSet<>(beforeRequestDocumentsIdSet);
-        documentIdsToRemove.removeAll(requestedReferencesIdSet);
+
+        Set<Document> referencesToAdd = new HashSet<>(referencesFromClient);
+        referencesToAdd.removeAll(referencesBeforeRequest);
+
+        Set<Document> referencesToRemove = new HashSet<>(referencesBeforeRequest);
+        referencesToRemove.removeAll(referencesFromClient);
 
         // add new references to the document
-        for (Document reference : requestedDocuments) {
-            if (documentIdsToAdd.contains(reference.getId())) {
+        for (Document reference : referencesFromRepo) {
+            if (referencesToAdd.contains(reference)) {
                 document.addReference(reference);
             }
         }
 
         // remove references from the document
-        for (Document reference : beforeRequestReferences) {
-            if (documentIdsToRemove.contains(reference.getId())) {
+        for (Document reference : referencesBeforeRequest) {
+            if (referencesToRemove.contains(reference)) {
                 document.removeReference(reference);
             }
         }
     }
 
-    private void validateRequestedAuthorsExistsOrThrow(List<Author> authors, List<Long> requestedIds) {
-        Set<Long> foundIds = authors.stream()
+    private void validateRequestedAuthorsExistsOrThrow(List<Author> authorsFromRepo, Set<Author> authorsFromClient) {
+        Set<Long> authorIdsFromRepo = authorsFromRepo.stream()
                 .map(Author::getId)
                 .collect(Collectors.toSet());
 
-        Set<Long> missingIds = new HashSet<>(requestedIds);
-        missingIds.removeAll(foundIds);
+        Set<Long> missingIds = authorsFromClient.stream()
+                .map(Author::getId)
+                .collect(Collectors.toSet());
+
+        missingIds.removeAll(authorIdsFromRepo);
 
         if (!missingIds.isEmpty()) {
             throw new ResourceNotFoundException("Author(s) with ID(s) " + missingIds + " do not exist");
         }
     }
 
-    private void validateNoSelfReferencingOrThrow(List<Long> requestedReferenceIds, Document document) {
-        if (requestedReferenceIds.contains(document.getId())) {
+    private void validateNoSelfReferencingOrThrow(Set<Document> referencesFromClient, Document document) {
+        if (referencesFromClient.contains(document)) {
             throw new AssociationConflictException("Document can not reference itself. Remove ID(" + document.getId() + ") from the reference list");
         }
     }
 
-    private void validateRequestedReferencesExistsOrThrow(List<Document> documents, List<Long> requestedIds) {
-        Set<Long> foundIds = documents.stream()
+    private void validateRequestedReferencesExistsOrThrow(List<Document> referencesFromRepo, Set<Document> referencesFromClient) {
+        Set<Long> referenceIdsFromRepo = referencesFromRepo.stream()
                 .map(Document::getId)
                 .collect(Collectors.toSet());
 
-        Set<Long> missingIds = new HashSet<>(requestedIds);
-        missingIds.removeAll(foundIds);
+        Set<Long> missingIds = referencesFromClient.stream()
+                .map(Document::getId)
+                .collect(Collectors.toSet());
+
+        missingIds.removeAll(referenceIdsFromRepo);
 
         if (!missingIds.isEmpty()) {
             throw new ResourceNotFoundException("Document(s) with ID(s) " + missingIds + " do not exist");
@@ -189,11 +198,5 @@ public class DocumentService {
 
     private Document getDocumentById(Long id) {
         return documentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Document with ID " + id + " does not exist"));
-    }
-
-    private List<Long> getIdsFromUserInput(List<IdInputDTO> inputList) {
-        return inputList.stream()
-                .map(IdInputDTO::getId)
-                .collect(Collectors.toList());
     }
 }

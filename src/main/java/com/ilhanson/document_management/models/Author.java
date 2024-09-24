@@ -43,7 +43,8 @@ public class Author {
             joinColumns = @JoinColumn(name = "author_id"),
             inverseJoinColumns = @JoinColumn(name = "document_id")
     )
-    private final Set<Document> documents = new HashSet<>();
+    // shouldn't be final so that mappers work correctly
+    private Set<Document> documents = new HashSet<>();
 
     // As the owner of the relationship
     // providing the utility method to keep both sides in sync

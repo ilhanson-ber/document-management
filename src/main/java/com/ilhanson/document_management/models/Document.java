@@ -38,7 +38,8 @@ public class Document {
     private String body;
 
     @ManyToMany(mappedBy = "documents")
-    private final Set<Author> authors = new HashSet<>();
+    // shouldn't be final so that mappers work correctly
+    private Set<Author> authors = new HashSet<>();
 
     @ManyToMany
     @JoinTable(
@@ -46,10 +47,12 @@ public class Document {
             joinColumns = @JoinColumn(name = "document_id"),
             inverseJoinColumns = @JoinColumn(name = "reference_id")
     )
-    private final Set<Document> references = new HashSet<>();
+    // shouldn't be final so that mappers work correctly
+    private Set<Document> references = new HashSet<>();
 
     @ManyToMany(mappedBy = "references")
-    private final Set<Document> referredBy = new HashSet<>();
+    // shouldn't be final so that mappers work correctly
+    private Set<Document> referredBy = new HashSet<>();
 
     // As the owner of the relationship
     // providing the utility method to keep both sides in sync
