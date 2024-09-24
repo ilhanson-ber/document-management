@@ -3,7 +3,6 @@ package com.ilhanson.document_management.services;
 import com.ilhanson.document_management.dtos.*;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.AuthorMapper;
-import com.ilhanson.document_management.mappers.DocumentMapper;
 import com.ilhanson.document_management.models.Author;
 import com.ilhanson.document_management.models.Document;
 import com.ilhanson.document_management.repositories.AuthorRepository;
@@ -25,9 +24,6 @@ public class AuthorService {
 
     private final AuthorMapper authorMapper;
 
-    private final DocumentMapper documentMapper;
-
-
     @Transactional(readOnly = true)
     public AuthorDetailsDTO getAuthorDetails(Long id) {
         Author author = getAuthorById(id);
@@ -46,12 +42,15 @@ public class AuthorService {
     }
 
     @Transactional
-    public AuthorDetailsDTO createAuthor(AuthorCreateDTO authorInput) {
-        Author author = authorMapper.mapToModel(authorInput);
+    public AuthorDetailsDTO createAuthor(AuthorCreateDTO authorDTOInput) {
+        Author author = authorMapper.mapToModel(authorDTOInput);
 
-        List<Long> requestedDocumentIds = getIdsFromUserInput(authorInput.getDocuments());
+        List<IdInputDTO> requestedDocumentIds = authorDTOInput.getDocuments();
+        // we need a null check because document list is not
+        // mandatory in author create request
+        // (in contrast to update request)
         if (requestedDocumentIds != null && !requestedDocumentIds.isEmpty()) {
-            associateDocumentsWithAuthor(requestedDocumentIds, author.getDocuments(), author);
+            associateDocumentsWithAuthor(getIdsFromUserInput(requestedDocumentIds), author);
         }
 
         Author savedAuthor = authorRepository.save(author);
@@ -59,25 +58,33 @@ public class AuthorService {
     }
 
     @Transactional
-    public AuthorDetailsDTO updateAuthor(AuthorUpdateDTO authorInput) {
-        Author author = authorMapper.mapToModel(authorInput);
-        Set<Document> existingDocuments = getAuthorById(author.getId()).getDocuments();
+    public AuthorDetailsDTO updateAuthor(AuthorUpdateDTO authorDTOInput) {
+        Author authorInput = authorMapper.mapToModel(authorDTOInput);
+        Author author = getAuthorById(authorInput.getId());
 
-        List<Long> requestedDocumentIds = getIdsFromUserInput(authorInput.getDocuments());
-        associateDocumentsWithAuthor(requestedDocumentIds, existingDocuments, author);
+        author.setFirstName(authorInput.getFirstName());
+        author.setLastName(authorInput.getLastName());
+
+        List<Long> requestedDocumentIds = getIdsFromUserInput(authorDTOInput.getDocuments());
+        associateDocumentsWithAuthor(requestedDocumentIds, author);
 
         Author savedAuthor = authorRepository.save(author);
         return authorMapper.mapToDetailsDTO(savedAuthor);
     }
 
-    private void associateDocumentsWithAuthor(List<Long> requestedDocumentIds, Set<Document> existingDocuments, Author author) {
+    private void associateDocumentsWithAuthor(List<Long> requestedDocumentIds, Author author) {
         List<Document> requestedDocuments = documentRepository.findAllById(requestedDocumentIds);
-        validateRequestedDocumentsExists(requestedDocuments, requestedDocumentIds);
+        validateRequestedDocumentsExistsOrThrow(requestedDocuments, requestedDocumentIds);
+
+        Set<Document> beforeRequestDocuments = new HashSet<>(author.getDocuments());
 
         Set<Long> requestedDocumentsIdSet = new HashSet<>(requestedDocumentIds);
-        Set<Long> existingDocumentsIdSet = existingDocuments.stream()
+        Set<Long> existingDocumentsIdSet = beforeRequestDocuments.stream()
                 .map(Document::getId)
                 .collect(Collectors.toSet());
+
+        // document list did not change, exit from here
+        if (requestedDocumentsIdSet.equals(existingDocumentsIdSet)) return;
 
         Set<Long> documentsToAddIds = new HashSet<>(requestedDocumentsIdSet);
         documentsToAddIds.removeAll(existingDocumentsIdSet);
@@ -85,29 +92,28 @@ public class AuthorService {
         Set<Long> documentsToRemoveIds = new HashSet<>(existingDocumentsIdSet);
         documentsToRemoveIds.removeAll(requestedDocumentsIdSet);
 
-        // Add new documents to the author
+        // add new documents to the author
         for (Document document : requestedDocuments) {
             if (documentsToAddIds.contains(document.getId())) {
                 author.addDocument(document);
             }
         }
 
-        // Remove documents from the author
-        for (Document document : existingDocuments) {
+        // remove missing documents from the author
+        for (Document document : beforeRequestDocuments) {
             if (documentsToRemoveIds.contains(document.getId())) {
                 author.removeDocument(document);
             }
         }
     }
 
-    private void validateRequestedDocumentsExists(List<Document> documents, List<Long> requestedIds) {
+    private void validateRequestedDocumentsExistsOrThrow(List<Document> documents, List<Long> requestedIds) {
         Set<Long> foundIds = documents.stream()
                 .map(Document::getId)
                 .collect(Collectors.toSet());
 
-        List<Long> missingIds = requestedIds.stream()
-                .filter(id -> !foundIds.contains(id))
-                .collect(Collectors.toList());
+        Set<Long> missingIds = new HashSet<>(requestedIds);
+        missingIds.removeAll(foundIds);
 
         if (!missingIds.isEmpty()) {
             throw new ResourceNotFoundException("Document(s) with ID(s) " + missingIds + " do not exist");
@@ -115,7 +121,7 @@ public class AuthorService {
     }
 
     private Author getAuthorById(Long id) {
-        return authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author with ID " + id + "do not exist"));
+        return authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author with ID " + id + " does not exist"));
     }
 
     private List<Long> getIdsFromUserInput(List<IdInputDTO> inputList) {

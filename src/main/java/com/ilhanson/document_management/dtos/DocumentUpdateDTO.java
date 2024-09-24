@@ -32,4 +32,7 @@ public class DocumentUpdateDTO {
     @Valid
     @NotNull(message = "List of reference IDs should be provided")
     private List<IdInputDTO> references;
+
+    @Valid
+    private List<IdInputDTO> authors;
 }

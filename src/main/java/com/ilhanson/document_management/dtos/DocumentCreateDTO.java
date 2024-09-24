@@ -29,4 +29,7 @@ public class DocumentCreateDTO {
 
     @Valid
     private List<IdInputDTO> references;
+
+    @Valid
+    private List<IdInputDTO> authors;
 }
