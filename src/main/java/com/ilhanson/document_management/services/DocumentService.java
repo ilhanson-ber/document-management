@@ -1,6 +1,7 @@
 package com.ilhanson.document_management.services;
 
 import com.ilhanson.document_management.dtos.*;
+import com.ilhanson.document_management.exceptions.AssociationConflictException;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.DocumentMapper;
 import com.ilhanson.document_management.models.Author;
@@ -55,7 +56,7 @@ public class DocumentService {
         }
 
         List<IdInputDTO> requestedReferenceIds = documentDTOInput.getReferences();
-        if (requestedAuthorIds != null && !requestedAuthorIds.isEmpty()) {
+        if (requestedReferenceIds != null && !requestedReferenceIds.isEmpty()) {
             associateReferencesWithDocument(getIdsFromUserInput(requestedReferenceIds), document);
         }
 
@@ -121,6 +122,7 @@ public class DocumentService {
     private void associateReferencesWithDocument(List<Long> requestedReferenceIds, Document document) {
         List<Document> requestedDocuments = documentRepository.findAllById(requestedReferenceIds);
         validateRequestedReferencesExistsOrThrow(requestedDocuments, requestedReferenceIds);
+        validateNoSelfReferencingOrThrow(requestedReferenceIds, document);
 
         Set<Document> beforeRequestReferences = new HashSet<>(document.getReferences());
 
@@ -163,6 +165,12 @@ public class DocumentService {
 
         if (!missingIds.isEmpty()) {
             throw new ResourceNotFoundException("Author(s) with ID(s) " + missingIds + " do not exist");
+        }
+    }
+
+    private void validateNoSelfReferencingOrThrow(List<Long> requestedReferenceIds, Document document) {
+        if (requestedReferenceIds.contains(document.getId())) {
+            throw new AssociationConflictException("Document can not reference itself. Remove ID(" + document.getId() + ") from the reference list");
         }
     }
 

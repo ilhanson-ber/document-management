@@ -29,6 +29,13 @@ public class CustomExceptionHandler {
         return new ResponseEntity<>(apiError, unprocessableEntity);
     }
 
+    @ExceptionHandler(AssociationConflictException.class)
+    public ResponseEntity<ApiError> handleAssociationConflict(AssociationConflictException e) {
+        HttpStatus conflict = HttpStatus.CONFLICT;
+        ApiError apiError = new ApiError(e.getMessage(), conflict.getReasonPhrase(), conflict.value(), Instant.now());
+        return new ResponseEntity<>(apiError, conflict);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         HttpStatus badRequest = HttpStatus.BAD_REQUEST;
