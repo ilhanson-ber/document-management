@@ -24,7 +24,7 @@ import java.util.Set;
 // In that case, replace these methods with a version supporting
 // a better comparison for null id objects
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Author {
+public class Author implements Identifiable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

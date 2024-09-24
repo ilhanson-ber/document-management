@@ -25,7 +25,7 @@ public class AuthorDetailsController {
             @PathVariable Long id,
             @Valid @RequestBody AuthorUpdateDTO authorUpdateDTO) {
         if (!id.equals(authorUpdateDTO.getId())) {
-            throw new UnprocessableContentException("ID in request path and ID in request body should match");
+            throw new UnprocessableContentException();
         }
         return authorService.updateAuthor(authorUpdateDTO);
     }

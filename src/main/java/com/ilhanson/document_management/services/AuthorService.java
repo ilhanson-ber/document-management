@@ -10,11 +10,13 @@ import com.ilhanson.document_management.models.Author;
 import com.ilhanson.document_management.models.Document;
 import com.ilhanson.document_management.repositories.AuthorRepository;
 import com.ilhanson.document_management.repositories.DocumentRepository;
+import com.ilhanson.document_management.services.helpers.AssociationUtils;
+import com.ilhanson.document_management.services.helpers.CollectionUtils;
+import com.ilhanson.document_management.services.helpers.ValidationUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,12 +51,7 @@ public class AuthorService {
         Author authorInput = authorMapper.mapToModel(authorDTOInput);
         Author author = new Author();
 
-        author.setFirstName(authorInput.getFirstName());
-        author.setLastName(authorInput.getLastName());
-        associateDocumentsWithAuthor(authorInput.getDocuments(), author);
-
-        Author savedAuthor = authorRepository.save(author);
-        return authorMapper.mapToDetailsDTO(savedAuthor);
+        return saveAuthor(authorInput, author);
     }
 
     @Transactional
@@ -62,71 +59,44 @@ public class AuthorService {
         Author authorInput = authorMapper.mapToModel(authorDTOInput);
         Author author = getAuthorById(authorInput.getId());
 
-        author.setFirstName(authorInput.getFirstName());
-        author.setLastName(authorInput.getLastName());
-        associateDocumentsWithAuthor(authorInput.getDocuments(), author);
+        return saveAuthor(authorInput, author);
+    }
 
-        Author savedAuthor = authorRepository.save(author);
+    private AuthorDetailsDTO saveAuthor(Author input, Author output) {
+        output.setFirstName(input.getFirstName());
+        output.setLastName(input.getLastName());
+        if (AssociationUtils.shouldUpdateAssociations(input.getDocuments(), output.getDocuments()))
+            associateDocumentsWithAuthor(input.getDocuments(), output);
+
+        Author savedAuthor = authorRepository.save(output);
         return authorMapper.mapToDetailsDTO(savedAuthor);
     }
 
     private void associateDocumentsWithAuthor(Set<Document> documentsFromClient, Author author) {
-        // we need to clone (freeze) the current state
-        // because we will modify the state while we are
-        // adding and removing associations
-        // otherwise: ConcurrentModificationException
-        Set<Document> documentsBeforeRequest = author.getDocuments();
-
-        if (documentsFromClient == null) documentsFromClient = new HashSet<>();
-
-        // associations did not change, exit from here
-        if (documentsFromClient.equals(documentsBeforeRequest)) return;
-
         List<Document> documentsFromRepo = documentRepository.findAllById(
-                documentsFromClient.stream()
-                        .map(Document::getId)
-                        .collect(Collectors.toList()));
+                CollectionUtils.extractIds(documentsFromClient));
 
         validateRequestedDocumentsExistsOrThrow(documentsFromRepo, documentsFromClient);
 
-        Set<Document> documentsToAdd = new HashSet<>(documentsFromClient);
-        documentsToAdd.removeAll(documentsBeforeRequest);
-
-        Set<Document> documentsToRemove = new HashSet<>(documentsBeforeRequest);
-        documentsToRemove.removeAll(documentsFromClient);
-
-        // add new documents to the author
-        for (Document document : documentsFromRepo) {
-            if (documentsToAdd.contains(document)) {
-                author.addDocument(document);
-            }
-        }
-
-        // remove documents from the author
-        for (Document document : documentsBeforeRequest) {
-            if (documentsToRemove.contains(document)) {
-                author.removeDocument(document);
-            }
-        }
+        AssociationUtils.associateEntitiesWithOwner(
+                documentsFromClient,
+                documentsFromRepo,
+                author.getDocuments(),
+                author,
+                Author::addDocument,
+                Author::removeDocument
+        );
     }
 
     private void validateRequestedDocumentsExistsOrThrow(List<Document> documentsFromRepo, Set<Document> documentsFromClient) {
-        Set<Long> documentIdsFromRepo = documentsFromRepo.stream()
-                .map(Document::getId)
-                .collect(Collectors.toSet());
-
-        Set<Long> missingIds = documentsFromClient.stream()
-                .map(Document::getId)
-                .collect(Collectors.toSet());
-
-        missingIds.removeAll(documentIdsFromRepo);
-
-        if (!missingIds.isEmpty()) {
-            throw new ResourceNotFoundException("Document(s) with ID(s) " + missingIds + " do not exist");
-        }
+        ValidationUtils.validateEntitiesExistOrThrow(
+                documentsFromRepo,
+                documentsFromClient,
+                "Document(s)"
+        );
     }
 
     private Author getAuthorById(Long id) {
-        return authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author with ID " + id + " does not exist"));
+        return authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author", id));
     }
 }

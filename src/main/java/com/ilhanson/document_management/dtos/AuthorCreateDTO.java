@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -29,5 +30,5 @@ public class AuthorCreateDTO {
     private String lastName;
 
     @Valid
-    private List<IdInputDTO> documents;
+    private List<IdInputDTO> documents = new ArrayList<>();
 }

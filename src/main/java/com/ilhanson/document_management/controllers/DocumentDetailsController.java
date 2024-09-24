@@ -25,7 +25,7 @@ public class DocumentDetailsController {
             @PathVariable Long id,
             @Valid @RequestBody DocumentUpdateDTO documentUpdateDTO) {
         if (!id.equals(documentUpdateDTO.getId())) {
-            throw new UnprocessableContentException("ID in request path and ID in request body should match");
+            throw new UnprocessableContentException();
         }
         return documentService.updateDocument(documentUpdateDTO);
     }

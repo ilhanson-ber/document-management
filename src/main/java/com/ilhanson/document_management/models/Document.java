@@ -24,7 +24,7 @@ import java.util.Set;
 // automatic persist and merge cascading.
 // In that case, replace these methods with a version supporting
 // a better comparison for null id objects
-public class Document {
+public class Document implements Identifiable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
