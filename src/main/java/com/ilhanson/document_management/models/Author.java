@@ -1,6 +1,7 @@
 package com.ilhanson.document_management.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.HashSet;
@@ -31,9 +32,11 @@ public class Author implements Identifiable {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @Size(min = 1)
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
+    @Size(min = 1)
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 

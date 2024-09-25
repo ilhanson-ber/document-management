@@ -1,6 +1,7 @@
 package com.ilhanson.document_management.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.HashSet;
@@ -31,9 +32,11 @@ public class Document implements Identifiable {
     @EqualsAndHashCode.Include
     private Long id;
 
+    @Size(min = 1)
     @Column(name = "title", nullable = false, length = 200)
     private String title;
 
+    @Size(min = 1)
     @Column(name = "body", nullable = false)
     private String body;
 
