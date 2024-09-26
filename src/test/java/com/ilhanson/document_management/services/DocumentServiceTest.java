@@ -224,13 +224,16 @@ class DocumentServiceTest {
     @Test
     void shouldThrowWhenSelfReferencingDocument() {
         // Arrange
-        DocumentCreateDTO documentCreateDTO = new DocumentCreateDTO(null, "Doc 1", "Body 1", null, null);
-        Document documentInput = new Document(1L, "Doc 1", "Body 1", null, Set.of(new Document(1L, "Doc 1", "Body 1", null, null, null)), null);
+        DocumentUpdateDTO documentUpdateDTO = new DocumentUpdateDTO(1L, "Doc 1", "Body 1", null, null);
+        Document doc1 = new Document(1L, "Doc 1", "Body 1", new HashSet<>(), new HashSet<>(), new HashSet<>());
+        Document documentFromClient = new Document(1L, "Doc 1", "Body 1", new HashSet<>(), Set.of(doc1), new HashSet<>());
 
-        when(documentMapper.mapToModel(documentCreateDTO)).thenReturn(documentInput);
+        when(documentMapper.mapToModel(documentUpdateDTO)).thenReturn(documentFromClient);
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(doc1));
+        when(documentRepository.findAllById(anyList())).thenReturn(List.of(doc1));
 
         // Act & Assert
-        assertThatThrownBy(() -> documentService.createDocument(documentCreateDTO))
+        assertThatThrownBy(() -> documentService.updateDocument(documentUpdateDTO))
                 .isInstanceOf(AssociationConflictException.class)
                 .hasMessageContaining("Document can not reference itself");
     }

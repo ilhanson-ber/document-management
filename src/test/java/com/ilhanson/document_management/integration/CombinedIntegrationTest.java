@@ -3,21 +3,27 @@ package com.ilhanson.document_management.integration;
 import com.ilhanson.document_management.dtos.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TO DO: modularize integration tests
-// Transactions within a test class are not roll backed automatically
-// for http calls. That's why having multiple methods affect the following tests.
-//  I tried to separate the tests into multiple files but then due to the testcontainers
-// setup, I received connection pool rejection for the following tests.
-// As a quick (and dirty) solution, I collected all the tests in one method. They should be ideally separated
-// in the future.
-public class CombinedIntegrationTest extends BaseIntegrationTest {
+@Testcontainers
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class CombinedIntegrationTest {
+
+    @Container
+    @ServiceConnection
+    public static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest");
 
     @Autowired
     private WebTestClient webTestClient;
