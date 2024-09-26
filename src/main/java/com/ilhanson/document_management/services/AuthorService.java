@@ -14,6 +14,7 @@ import com.ilhanson.document_management.services.helpers.AssociationUtils;
 import com.ilhanson.document_management.services.helpers.CollectionUtils;
 import com.ilhanson.document_management.services.helpers.ValidationUtils;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class AuthorService {
     private final AuthorRepository authorRepository;
     private final DocumentRepository documentRepository;
@@ -31,53 +33,65 @@ public class AuthorService {
 
     @Transactional(readOnly = true)
     public AuthorDetailsDTO getAuthorDetails(Long id) {
+        log.info("Fetching details for author with ID: {}", id);
         Author author = getAuthorById(id);
+        log.debug("Author details retrieved: {}", author);
         return authorMapper.mapToDetailsDTO(author);
     }
 
     @Transactional(readOnly = true)
     public List<AuthorDTO> getAllAuthors() {
-        return authorRepository.findAll().stream().map(authorMapper::mapToDTO).collect(Collectors.toList());
+        log.info("Fetching all authors");
+        List<AuthorDTO> authors = authorRepository.findAll().stream().map(authorMapper::mapToDTO).collect(Collectors.toList());
+        log.debug("Total authors retrieved: {}", authors.size());
+        return authors;
     }
 
     @Transactional
     public void deleteAuthor(Long id) {
+        log.info("Deleting author with ID: {}", id);
         Author author = getAuthorById(id);
         authorRepository.delete(author);
+        log.info("Author with ID: {} deleted successfully", id);
     }
 
     @Transactional
     public AuthorDetailsDTO createAuthor(AuthorCreateDTO authorDTOInput) {
+        log.info("Creating new author: {} {}", authorDTOInput.getFirstName(), authorDTOInput.getLastName());
         Author authorInput = authorMapper.mapToModel(authorDTOInput);
         Author author = new Author();
-
-        return saveAuthor(authorInput, author);
+        AuthorDetailsDTO createdAuthor = saveAuthor(authorInput, author);
+        log.info("Author created successfully with ID: {}", createdAuthor.getId());
+        return createdAuthor;
     }
 
     @Transactional
     public AuthorDetailsDTO updateAuthor(AuthorUpdateDTO authorDTOInput) {
+        log.info("Updating author with ID: {}", authorDTOInput.getId());
         Author authorInput = authorMapper.mapToModel(authorDTOInput);
         Author author = getAuthorById(authorInput.getId());
-
-        return saveAuthor(authorInput, author);
+        AuthorDetailsDTO updatedAuthor = saveAuthor(authorInput, author);
+        log.info("Author with ID: {} updated successfully", updatedAuthor.getId());
+        return updatedAuthor;
     }
 
     private AuthorDetailsDTO saveAuthor(Author input, Author output) {
+        log.debug("Saving author: {} {}", input.getFirstName(), input.getLastName());
         output.setFirstName(input.getFirstName());
         output.setLastName(input.getLastName());
-        if (AssociationUtils.shouldUpdateAssociations(input.getDocuments(), output.getDocuments()))
+        if (AssociationUtils.shouldUpdateAssociations(input.getDocuments(), output.getDocuments())) {
             associateDocumentsWithAuthor(input.getDocuments(), output);
-
+        }
         Author savedAuthor = authorRepository.save(output);
+        log.debug("Author saved with ID: {}", savedAuthor.getId());
         return authorMapper.mapToDetailsDTO(savedAuthor);
     }
 
     private void associateDocumentsWithAuthor(Set<Document> documentsFromClient, Author author) {
+        log.debug("Associating documents {} with author: {}", documentsFromClient, author.getId());
         List<Document> documentsFromRepo = documentRepository.findAllById(
                 CollectionUtils.extractIds(documentsFromClient));
-
         validateRequestedDocumentsExistsOrThrow(documentsFromRepo, documentsFromClient);
-
         AssociationUtils.associateEntitiesWithOwner(
                 documentsFromClient,
                 documentsFromRepo,
@@ -89,6 +103,7 @@ public class AuthorService {
     }
 
     private void validateRequestedDocumentsExistsOrThrow(List<Document> documentsFromRepo, Set<Document> documentsFromClient) {
+        log.debug("Validating documents existence");
         ValidationUtils.validateEntitiesExistOrThrow(
                 documentsFromRepo,
                 documentsFromClient,
@@ -97,6 +112,10 @@ public class AuthorService {
     }
 
     private Author getAuthorById(Long id) {
-        return authorRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Author", id));
+        log.debug("Fetching author by ID: {}", id);
+        return authorRepository.findById(id).orElseThrow(() -> {
+            log.error("Author not found with ID: {}", id);
+            return new ResourceNotFoundException("Author", id);
+        });
     }
 }
