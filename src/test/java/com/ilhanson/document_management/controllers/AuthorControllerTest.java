@@ -1,6 +1,7 @@
 package com.ilhanson.document_management.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ilhanson.document_management.config.JwtAuthenticationFilter;
 import com.ilhanson.document_management.dtos.*;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.services.AuthorService;
@@ -8,18 +9,27 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AuthorController.class)
+@WebMvcTest(
+        value = AuthorController.class,
+        excludeFilters =
+        @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class))
 class AuthorControllerTest {
 
     @MockBean
@@ -32,13 +42,14 @@ class AuthorControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser
     void shouldGetAllAuthors() throws Exception {
         // Arrange
         AuthorDTO authorDTO = new AuthorDTO(1L, "John", "Doe");
         when(authorService.getAllAuthors()).thenReturn(List.of(authorDTO));
 
         // Act & Assert
-        mockMvc.perform(get("/api/v1/authors"))
+        mockMvc.perform(get("/api/v1/authors").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value(1L))
@@ -47,6 +58,7 @@ class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldCreateAuthor() throws Exception {
         // Arrange
         AuthorCreateDTO authorCreateDTO = new AuthorCreateDTO(null, "John", "Doe", null);
@@ -56,6 +68,7 @@ class AuthorControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/authors")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authorCreateDTO)))
                 .andExpect(status().isCreated())
@@ -66,6 +79,7 @@ class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldCreateAuthorWithDocuments() throws Exception {
         // Arrange
         IdInputDTO document1 = new IdInputDTO(1L);
@@ -82,6 +96,7 @@ class AuthorControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/authors")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authorCreateDTO)))
                 .andExpect(status().isCreated())
@@ -98,12 +113,14 @@ class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestForInvalidAuthorCreateDTO() throws Exception {
         // Arrange
         AuthorCreateDTO invalidAuthorCreateDTO = new AuthorCreateDTO(null, "", "", null); // Invalid data
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/authors")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidAuthorCreateDTO)))
                 .andExpect(status().isBadRequest())
@@ -115,6 +132,7 @@ class AuthorControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldHandleResourceNotFoundException() throws Exception {
         // Arrange
         when(authorService.createAuthor(any(AuthorCreateDTO.class))).thenThrow(new ResourceNotFoundException("Author", 1L));
@@ -123,6 +141,7 @@ class AuthorControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/authors")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authorCreateDTO)))
                 .andExpect(status().isNotFound())

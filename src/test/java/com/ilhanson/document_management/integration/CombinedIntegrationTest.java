@@ -30,9 +30,23 @@ public class CombinedIntegrationTest {
 
     @Test
     public void completeIntegrationTest() {
-        // Step 1: Create an author with documents 1 and 2
+        // Step 1: Log in with an EDITOR account and retrieve the token
+        LoginDTO loginDTO = new LoginDTO("kaib", "password");
+        String token = webTestClient.post()
+                .uri("/api/v1/auth/login")
+                .bodyValue(loginDTO)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(AuthenticationResponseDTO.class)
+                .returnResult().getResponseBody()
+                .token();
+
+        assertThat(token).isNotNull();
+
+        // Step 2: Create an author with documents 1 and 2, using the token
         List<DocumentDTO> documents = webTestClient.get()
                 .uri("/api/v1/documents")
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(DocumentDTO.class)
@@ -45,6 +59,7 @@ public class CombinedIntegrationTest {
         AuthorCreateDTO newAuthor = new AuthorCreateDTO(null, "John", "Doe", List.of(new IdInputDTO(doc1.getId()), new IdInputDTO(doc2.getId())));
         AuthorDetailsDTO createdAuthor = webTestClient.post()
                 .uri("/api/v1/authors")
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .bodyValue(newAuthor)
                 .exchange()
                 .expectStatus().isCreated()
@@ -54,10 +69,11 @@ public class CombinedIntegrationTest {
         assertThat(createdAuthor).isNotNull();
         assertThat(createdAuthor.getDocuments()).extracting("id").containsExactlyInAnyOrder(doc1.getId(), doc2.getId());
 
-        // Step 2: Create a new document with no authors and no references
+        // Step 3: Create a new document with no authors and no references, using the token
         DocumentCreateDTO newDocument = new DocumentCreateDTO(null, "New Doc", "This is a new document", new ArrayList<>(), new ArrayList<>());
         DocumentDetailsDTO createdDocument = webTestClient.post()
                 .uri("/api/v1/documents")
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .bodyValue(newDocument)
                 .exchange()
                 .expectStatus().isCreated()
@@ -68,10 +84,11 @@ public class CombinedIntegrationTest {
         assertThat(createdDocument.getAuthors()).isEmpty();
         assertThat(createdDocument.getReferences()).isEmpty();
 
-        // Step 3: Add the new author and document id 1 as references to this document using update
+        // Step 4: Add the new author and document id 1 as references to this document using update, using the token
         DocumentUpdateDTO updatedDocument = new DocumentUpdateDTO(createdDocument.getId(), createdDocument.getTitle(), createdDocument.getBody(), List.of(new IdInputDTO(doc1.getId())), List.of(new IdInputDTO(createdAuthor.getId())));
         webTestClient.put()
                 .uri("/api/v1/documents/" + createdDocument.getId())
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .bodyValue(updatedDocument)
                 .exchange()
                 .expectStatus().isOk()
@@ -82,10 +99,11 @@ public class CombinedIntegrationTest {
                     assertThat(updated.getAuthors()).hasSize(1).extracting("id").containsExactly(createdAuthor.getId());
                 });
 
-        // Step 4: Update the new author's name and remove document 2
+        // Step 5: Update the new author's name and remove document 2, using the token
         AuthorUpdateDTO updatedAuthor = new AuthorUpdateDTO(createdAuthor.getId(), "UpdatedJohn", "UpdatedDoe", List.of(new IdInputDTO(doc1.getId())));
         webTestClient.put()
                 .uri("/api/v1/authors/" + createdAuthor.getId())
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .bodyValue(updatedAuthor)
                 .exchange()
                 .expectStatus().isOk()
@@ -97,27 +115,31 @@ public class CombinedIntegrationTest {
                     assertThat(author.getDocuments()).hasSize(1).extracting("id").containsExactly(doc1.getId());
                 });
 
-        // Step 5: Delete the new author
+        // Step 6: Delete the new author, using the token
         webTestClient.delete()
                 .uri("/api/v1/authors/" + createdAuthor.getId())
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNoContent();
 
-        // Step 6: Delete the new document
+        // Step 7: Delete the new document, using the token
         webTestClient.delete()
                 .uri("/api/v1/documents/" + createdDocument.getId())
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNoContent();
 
-        // Step 7: Make a get details request to check 404 for the given author
+        // Step 8: Make a get details request to check 404 for the given author, using the token
         webTestClient.get()
                 .uri("/api/v1/authors/" + createdAuthor.getId())
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNotFound();
 
-        // Step 8: Make a get details request to check 404 for the document
+        // Step 9: Make a get details request to check 404 for the document, using the token
         webTestClient.get()
                 .uri("/api/v1/documents/" + createdDocument.getId())
+                .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNotFound();
     }

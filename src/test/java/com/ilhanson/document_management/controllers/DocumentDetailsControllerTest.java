@@ -1,6 +1,7 @@
 package com.ilhanson.document_management.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ilhanson.document_management.config.JwtAuthenticationFilter;
 import com.ilhanson.document_management.dtos.*;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.services.DocumentService;
@@ -8,7 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -16,10 +20,16 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(DocumentDetailsController.class)
+@WebMvcTest(
+        value = DocumentDetailsController.class,
+        excludeFilters =
+        @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class))
 class DocumentDetailsControllerTest {
 
     @MockBean
@@ -32,6 +42,7 @@ class DocumentDetailsControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser
     void shouldGetDocumentDetailsWithAuthorsAndReferences() throws Exception {
         // Arrange
         AuthorDTO author1 = new AuthorDTO(3L, "John", "Doe");
@@ -45,7 +56,7 @@ class DocumentDetailsControllerTest {
         when(documentService.getDocumentDetails(1L)).thenReturn(documentDetailsDTO);
 
         // Act & Assert
-        mockMvc.perform(get("/api/v1/documents/1"))
+        mockMvc.perform(get("/api/v1/documents/1").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
 
@@ -72,6 +83,7 @@ class DocumentDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldUpdateDocument() throws Exception {
         // Arrange
         DocumentUpdateDTO documentUpdateDTO = new DocumentUpdateDTO(1L, "Updated Doc", "Updated Body", new ArrayList<>(), new ArrayList<>());
@@ -81,6 +93,7 @@ class DocumentDetailsControllerTest {
 
         // Act & Assert
         mockMvc.perform(put("/api/v1/documents/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(documentUpdateDTO)))
                 .andExpect(status().isOk())
@@ -91,12 +104,14 @@ class DocumentDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnUnprocessableEntityWhenPathAndBodyIdMismatch() throws Exception {
         // Arrange
         DocumentUpdateDTO documentUpdateDTO = new DocumentUpdateDTO(2L, "Updated Doc", "Updated Body", new ArrayList<>(), new ArrayList<>()); // ID mismatch
 
         // Act & Assert
         mockMvc.perform(put("/api/v1/documents/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(documentUpdateDTO)))
                 .andExpect(status().isUnprocessableEntity())
@@ -107,19 +122,21 @@ class DocumentDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldDeleteDocument() throws Exception {
         // Act & Assert
-        mockMvc.perform(delete("/api/v1/documents/1"))
+        mockMvc.perform(delete("/api/v1/documents/1").with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
+    @WithMockUser
     void shouldHandleResourceNotFound() throws Exception {
         // Arrange
         when(documentService.getDocumentDetails(1L)).thenThrow(new ResourceNotFoundException("Document", 1L));
 
         // Act & Assert
-        mockMvc.perform(get("/api/v1/documents/1"))
+        mockMvc.perform(get("/api/v1/documents/1").with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("Document with ID 1 does not exist"))
@@ -128,6 +145,7 @@ class DocumentDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldUpdateDocumentWithAuthorsAndReferences() throws Exception {
         // Arrange
         DocumentUpdateDTO documentUpdateDTO = new DocumentUpdateDTO(1L, "Updated Doc", "Updated Body",
@@ -147,6 +165,7 @@ class DocumentDetailsControllerTest {
 
         // Act & Assert
         mockMvc.perform(put("/api/v1/documents/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(documentUpdateDTO)))
                 .andExpect(status().isOk())

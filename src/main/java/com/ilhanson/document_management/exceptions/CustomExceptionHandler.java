@@ -1,8 +1,10 @@
 package com.ilhanson.document_management.exceptions;
 
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,6 +43,14 @@ public class CustomExceptionHandler {
         return new ResponseEntity<>(apiError, conflict);
     }
 
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(DuplicateKeyException e) {
+        HttpStatus conflict = HttpStatus.CONFLICT;
+        log.warn("Duplicate key conflict: {}", e.getMessage());
+        ApiError apiError = new ApiError(e.getMessage(), conflict.getReasonPhrase(), conflict.value(), Instant.now());
+        return new ResponseEntity<>(apiError, conflict);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         HttpStatus badRequest = HttpStatus.BAD_REQUEST;
@@ -69,5 +79,21 @@ public class CustomExceptionHandler {
 
         ApiError apiError = new ApiError(errorMessage, badRequest.getReasonPhrase(), badRequest.value(), Instant.now(), errorDetails);
         return new ResponseEntity<>(apiError, badRequest);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiError> handleBadCredentials(BadCredentialsException e) {
+        HttpStatus unauthorized = HttpStatus.UNAUTHORIZED;
+        log.warn("Bad credentials error: {}", e.getMessage());
+        ApiError apiError = new ApiError(e.getMessage(), unauthorized.getReasonPhrase(), unauthorized.value(), Instant.now());
+        return new ResponseEntity<>(apiError, unauthorized);
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ApiError> handleJwt(JwtException e) {
+        HttpStatus unauthorized = HttpStatus.UNAUTHORIZED;
+        log.warn("Bad JWT Token: {}", e.getMessage());
+        ApiError apiError = new ApiError("Authorization token error", unauthorized.getReasonPhrase(), unauthorized.value(), Instant.now());
+        return new ResponseEntity<>(apiError, unauthorized);
     }
 }

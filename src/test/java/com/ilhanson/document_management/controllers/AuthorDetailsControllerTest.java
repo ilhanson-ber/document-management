@@ -1,6 +1,7 @@
 package com.ilhanson.document_management.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ilhanson.document_management.config.JwtAuthenticationFilter;
 import com.ilhanson.document_management.dtos.*;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.services.AuthorService;
@@ -8,7 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
@@ -17,10 +21,16 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AuthorDetailsController.class)
+@WebMvcTest(
+        value = AuthorDetailsController.class,
+        excludeFilters =
+        @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class))
 class AuthorDetailsControllerTest {
 
     @MockBean
@@ -33,6 +43,7 @@ class AuthorDetailsControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser
     void shouldGetAuthorDetailsWithDocuments() throws Exception {
         // Arrange
         DocumentDTO doc1 = new DocumentDTO(1L, "Doc 1", "Content 1");
@@ -43,7 +54,7 @@ class AuthorDetailsControllerTest {
         when(authorService.getAuthorDetails(1L)).thenReturn(authorDetailsDTO);
 
         // Act & Assert
-        mockMvc.perform(get("/api/v1/authors/1"))
+        mockMvc.perform(get("/api/v1/authors/1").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1L))
@@ -58,6 +69,7 @@ class AuthorDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldUpdateAuthorWithDocuments() throws Exception {
         // Arrange
         DocumentDTO doc1 = new DocumentDTO(1L, "Doc 1", "Content 1");
@@ -75,6 +87,7 @@ class AuthorDetailsControllerTest {
 
         // Act & Assert
         mockMvc.perform(put("/api/v1/authors/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authorUpdateDTO)))
                 .andExpect(status().isOk())
@@ -91,12 +104,14 @@ class AuthorDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnUnprocessableEntityWhenPathAndBodyIdMismatch() throws Exception {
         // Arrange
         AuthorUpdateDTO authorUpdateDTO = new AuthorUpdateDTO(2L, "John", "Doe", new ArrayList<>()); // ID mismatch
 
         // Act & Assert
         mockMvc.perform(put("/api/v1/authors/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(authorUpdateDTO)))
                 .andExpect(status().isUnprocessableEntity())
@@ -107,19 +122,22 @@ class AuthorDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldDeleteAuthor() throws Exception {
         // Act & Assert
-        mockMvc.perform(delete("/api/v1/authors/1"))
+        mockMvc.perform(delete("/api/v1/authors/1").with(csrf()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestForInvalidAuthorUpdateDTO() throws Exception {
         // Arrange
         AuthorCreateDTO invalidAuthorUpdateDTO = new AuthorCreateDTO(2L, "John", "Doe", null); // Invalid data
 
         // Act & Assert
         mockMvc.perform(put("/api/v1/authors/2")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidAuthorUpdateDTO)))
                 .andExpect(status().isBadRequest())
@@ -130,12 +148,13 @@ class AuthorDetailsControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldHandleResourceNotFound() throws Exception {
         // Arrange
         doThrow(new ResourceNotFoundException("Author", 1L)).when(authorService).deleteAuthor(1L);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/v1/authors/1"))
+        mockMvc.perform(delete("/api/v1/authors/1").with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("Author with ID 1 does not exist"))

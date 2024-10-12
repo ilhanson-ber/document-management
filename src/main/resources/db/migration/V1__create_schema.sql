@@ -1,7 +1,11 @@
-DROP TABLE IF EXISTS author_document;
-DROP TABLE IF EXISTS document_reference;
-DROP TABLE IF EXISTS author;
-DROP TABLE IF EXISTS document;
+CREATE TABLE user_account (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    role VARCHAR(50) NOT NULL
+);
 
 CREATE TABLE author (
     id SERIAL PRIMARY KEY,

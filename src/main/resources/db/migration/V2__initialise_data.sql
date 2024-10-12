@@ -1,6 +1,7 @@
--- Clear existing data
-TRUNCATE author_document, document_reference, author, document RESTART IDENTITY CASCADE;
-
+-- Insert users
+INSERT INTO user_account (first_name, last_name, username, password, role) VALUES
+('Samira', 'Lang', 'samiral', '$2a$10$cMzAnTS4kSfnuK6GL1Pshu20/DtyTsMqLmDeQNO273lAgCKJw/3N2', 'READER'),
+('Kai', 'Bennett', 'kaib', '$2a$10$.dr1FlgCfdtsCn1YGaLDxutiIEw/d4EGUSSsSRHFNOL9.iFS7wC.K', 'EDITOR');
 -- Insert authors
 INSERT INTO author (first_name, last_name) VALUES
 ('John', 'Doe'),

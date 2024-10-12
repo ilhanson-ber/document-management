@@ -1,24 +1,34 @@
 package com.ilhanson.document_management.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ilhanson.document_management.config.JwtAuthenticationFilter;
 import com.ilhanson.document_management.dtos.*;
 import com.ilhanson.document_management.services.DocumentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(DocumentController.class)
+@WebMvcTest(
+        value = DocumentController.class,
+        excludeFilters =
+        @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = JwtAuthenticationFilter.class))
 class DocumentControllerTest {
 
     @MockBean
@@ -31,13 +41,15 @@ class DocumentControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser
     void shouldGetAllDocuments() throws Exception {
         // Arrange
         DocumentDTO documentDTO = new DocumentDTO(1L, "Doc 1", "Body 1");
         when(documentService.getAllDocuments()).thenReturn(List.of(documentDTO));
 
         // Act & Assert
-        mockMvc.perform(get("/api/v1/documents"))
+        mockMvc.perform(get("/api/v1/documents").with(csrf())
+                )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id").value(1L))
@@ -46,6 +58,7 @@ class DocumentControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldCreateDocument() throws Exception {
         // Arrange
         DocumentCreateDTO documentCreateDTO = new DocumentCreateDTO(null, "Doc 1", "Body 1", null, null);
@@ -55,6 +68,7 @@ class DocumentControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/documents")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(documentCreateDTO)))
                 .andExpect(status().isCreated())
@@ -65,12 +79,14 @@ class DocumentControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldReturnBadRequestForInvalidDocumentCreateDTO() throws Exception {
         // Arrange
         DocumentCreateDTO invalidDocumentCreateDTO = new DocumentCreateDTO(null, "", "", null, null); // Invalid data
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/documents")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidDocumentCreateDTO)))
                 .andExpect(status().isBadRequest())
@@ -82,6 +98,7 @@ class DocumentControllerTest {
     }
 
     @Test
+    @WithMockUser
     void shouldCreateDocumentWithAuthorsAndReferences() throws Exception {
         // Arrange
         IdInputDTO author1 = new IdInputDTO(1L);
@@ -90,7 +107,7 @@ class DocumentControllerTest {
         IdInputDTO reference2 = new IdInputDTO(4L);
 
         DocumentCreateDTO documentCreateDTO = new DocumentCreateDTO(null, "Doc 1", "Body 1", List.of(reference1, reference2), List.of(author1, author2));
-        
+
         AuthorDTO authorDTO1 = new AuthorDTO(1L, "John", "Doe");
         AuthorDTO authorDTO2 = new AuthorDTO(2L, "Jane", "Doe");
 
@@ -103,6 +120,7 @@ class DocumentControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/documents")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(documentCreateDTO)))
                 .andExpect(status().isCreated())
