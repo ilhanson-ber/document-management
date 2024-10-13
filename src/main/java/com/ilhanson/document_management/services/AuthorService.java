@@ -8,6 +8,7 @@ import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.AuthorMapper;
 import com.ilhanson.document_management.models.Author;
 import com.ilhanson.document_management.models.Document;
+import com.ilhanson.document_management.producers.AuthorEventProducer;
 import com.ilhanson.document_management.repositories.AuthorRepository;
 import com.ilhanson.document_management.repositories.DocumentRepository;
 import com.ilhanson.document_management.services.helpers.AssociationUtils;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
 public class AuthorService {
     private final AuthorRepository authorRepository;
     private final DocumentRepository documentRepository;
+
+    private final AuthorEventProducer authorEventProducer;
 
     private final AuthorMapper authorMapper;
 
@@ -53,6 +56,8 @@ public class AuthorService {
         Author author = getAuthorById(id);
         authorRepository.delete(author);
         log.info("Author with ID: {} deleted successfully", id);
+
+        authorEventProducer.sendAuthorDeletedEvent(id);
     }
 
     @Transactional
@@ -72,6 +77,8 @@ public class AuthorService {
         Author author = getAuthorById(authorInput.getId());
         AuthorDetailsDTO updatedAuthor = saveAuthor(authorInput, author);
         log.info("Author with ID: {} updated successfully", updatedAuthor.getId());
+
+        authorEventProducer.sendAuthorUpdatedEvent(updatedAuthor);
         return updatedAuthor;
     }
 

@@ -1,6 +1,6 @@
 package com.ilhanson.document_management.services;
 
-import com.ilhanson.document_management.config.JwtUtility;
+import com.ilhanson.document_management.config.security.JwtUtility;
 import com.ilhanson.document_management.dtos.AuthenticationResponseDTO;
 import com.ilhanson.document_management.dtos.LoginDTO;
 import com.ilhanson.document_management.dtos.SignupDTO;

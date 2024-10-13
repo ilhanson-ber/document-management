@@ -1,7 +1,7 @@
 package com.ilhanson.document_management.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ilhanson.document_management.config.JwtAuthenticationFilter;
+import com.ilhanson.document_management.config.security.JwtAuthenticationFilter;
 import com.ilhanson.document_management.dtos.AuthenticationResponseDTO;
 import com.ilhanson.document_management.dtos.LoginDTO;
 import com.ilhanson.document_management.dtos.SignupDTO;

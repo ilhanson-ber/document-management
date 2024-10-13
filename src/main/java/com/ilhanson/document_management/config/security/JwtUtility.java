@@ -1,4 +1,4 @@
-package com.ilhanson.document_management.config;
+package com.ilhanson.document_management.config.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

@@ -1,5 +1,7 @@
 package com.ilhanson.document_management.mappers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ilhanson.document_management.dtos.AuthorCreateDTO;
 import com.ilhanson.document_management.dtos.AuthorDTO;
 import com.ilhanson.document_management.dtos.AuthorDetailsDTO;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 public class AuthorMapper {
     private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
 
     public AuthorDTO mapToDTO(Author author) {
         return modelMapper.map(author, AuthorDTO.class);
@@ -28,5 +31,13 @@ public class AuthorMapper {
 
     public Author mapToModel(AuthorUpdateDTO author) {
         return modelMapper.map(author, Author.class);
+    }
+
+    public String toJson(AuthorDetailsDTO authorDetailsDTO) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(authorDetailsDTO);
+    }
+
+    public AuthorDetailsDTO toDetailsDTO(String detailsJson) throws JsonProcessingException {
+        return objectMapper.readValue(detailsJson, AuthorDetailsDTO.class);
     }
 }

@@ -1,4 +1,4 @@
-package com.ilhanson.document_management.config;
+package com.ilhanson.document_management.config.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

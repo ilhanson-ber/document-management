@@ -5,6 +5,7 @@ import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.AuthorMapper;
 import com.ilhanson.document_management.models.Author;
 import com.ilhanson.document_management.models.Document;
+import com.ilhanson.document_management.producers.AuthorEventProducer;
 import com.ilhanson.document_management.repositories.AuthorRepository;
 import com.ilhanson.document_management.repositories.DocumentRepository;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class AuthorServiceTest {
 
     @Mock
     private AuthorMapper authorMapper;
+
+    @Mock
+    private AuthorEventProducer authorEventProducer;
 
     @InjectMocks
     private AuthorService authorService;
@@ -80,6 +84,8 @@ class AuthorServiceTest {
 
         // Assert
         verify(authorRepository, times(1)).delete(author);
+        verify(authorEventProducer, times(1)).sendAuthorDeletedEvent(1L);
+
     }
 
     @Test
@@ -124,6 +130,8 @@ class AuthorServiceTest {
         assertThat(result).isEqualTo(authorDetailsDTO);
         verify(authorRepository, times(1)).save(existingAuthor);
         verify(authorMapper, times(1)).mapToDetailsDTO(savedAuthor);
+        verify(authorEventProducer, times(1)).sendAuthorUpdatedEvent(result);
+
     }
 
     @Test
@@ -220,5 +228,6 @@ class AuthorServiceTest {
         verify(documentRepository, times(1)).findAllById(anyList());
         verify(authorRepository, times(1)).save(existingAuthor);
         assertThat(result).isEqualTo(authorDetailsDTO);
+        verify(authorEventProducer, times(1)).sendAuthorUpdatedEvent(result);
     }
 }

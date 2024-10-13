@@ -1,4 +1,4 @@
-package com.ilhanson.document_management.config;
+package com.ilhanson.document_management.config.security;
 
 import com.ilhanson.document_management.services.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,7 +24,7 @@ import static org.springframework.http.HttpMethod.*;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;

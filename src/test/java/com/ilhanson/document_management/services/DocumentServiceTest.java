@@ -9,6 +9,7 @@ import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.DocumentMapper;
 import com.ilhanson.document_management.models.Author;
 import com.ilhanson.document_management.models.Document;
+import com.ilhanson.document_management.producers.DocumentEventProducer;
 import com.ilhanson.document_management.repositories.AuthorRepository;
 import com.ilhanson.document_management.repositories.DocumentRepository;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,9 @@ class DocumentServiceTest {
 
     @Mock
     private DocumentMapper documentMapper;
+
+    @Mock
+    private DocumentEventProducer documentEventProducer;
 
     @InjectMocks
     private DocumentService documentService;
@@ -87,6 +91,7 @@ class DocumentServiceTest {
 
         // Assert
         verify(documentRepository, times(1)).delete(document);
+        verify(documentEventProducer, times(1)).sendDocumentDeletedEvent(1L);
     }
 
     @Test
@@ -131,6 +136,7 @@ class DocumentServiceTest {
         assertThat(result).isEqualTo(documentDetailsDTO);
         verify(documentRepository, times(1)).save(existingDocument);
         verify(documentMapper, times(1)).mapToDetailsDTO(savedDocument);
+        verify(documentEventProducer, times(1)).sendDocumentUpdatedEvent(1L);
     }
 
     @Test

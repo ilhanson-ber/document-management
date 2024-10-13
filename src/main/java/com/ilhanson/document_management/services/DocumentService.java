@@ -9,6 +9,7 @@ import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.mappers.DocumentMapper;
 import com.ilhanson.document_management.models.Author;
 import com.ilhanson.document_management.models.Document;
+import com.ilhanson.document_management.producers.DocumentEventProducer;
 import com.ilhanson.document_management.repositories.AuthorRepository;
 import com.ilhanson.document_management.repositories.DocumentRepository;
 import com.ilhanson.document_management.services.helpers.AssociationUtils;
@@ -30,6 +31,8 @@ import java.util.stream.Collectors;
 public class DocumentService {
     private final AuthorRepository authorRepository;
     private final DocumentRepository documentRepository;
+
+    private final DocumentEventProducer documentEventProducer;
 
     private final DocumentMapper documentMapper;
 
@@ -55,6 +58,8 @@ public class DocumentService {
         Document document = getDocumentById(id);
         documentRepository.delete(document);
         log.info("Document with ID: {} deleted successfully", id);
+
+        documentEventProducer.sendDocumentDeletedEvent(id);
     }
 
     @Transactional
@@ -74,6 +79,8 @@ public class DocumentService {
         Document document = getDocumentById(documentInput.getId());
         DocumentDetailsDTO updatedDocument = saveDocument(documentInput, document);
         log.info("Document with ID: {} updated successfully", updatedDocument.getId());
+
+        documentEventProducer.sendDocumentUpdatedEvent(updatedDocument.getId());
         return updatedDocument;
     }
 

@@ -6,10 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +28,14 @@ public class CombinedIntegrationTest {
     @Container
     @ServiceConnection
     public static PostgreSQLContainer<?> postgresContainer = new PostgreSQLContainer<>("postgres:latest");
+
+    @Container
+    public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:latest"));
+
+    @DynamicPropertySource
+    static void overrideProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+    }
 
     @Autowired
     private WebTestClient webTestClient;
@@ -100,6 +112,8 @@ public class CombinedIntegrationTest {
                 });
 
         // Step 5: Update the new author's name and remove document 2, using the token
+        // This author and the associated documents(s) will be deleted by Kafka services automatically
+        // Kafka flow is checked within KafkaIntegrationTest
         AuthorUpdateDTO updatedAuthor = new AuthorUpdateDTO(createdAuthor.getId(), "UpdatedJohn", "UpdatedDoe", List.of(new IdInputDTO(doc1.getId())));
         webTestClient.put()
                 .uri("/api/v1/authors/" + createdAuthor.getId())
@@ -115,30 +129,31 @@ public class CombinedIntegrationTest {
                     assertThat(author.getDocuments()).hasSize(1).extracting("id").containsExactly(doc1.getId());
                 });
 
-        // Step 6: Delete the new author, using the token
+
+        // Step 6: Delete an author, using the token
         webTestClient.delete()
-                .uri("/api/v1/authors/" + createdAuthor.getId())
+                .uri("/api/v1/authors/1")
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNoContent();
 
-        // Step 7: Delete the new document, using the token
+        // Step 7: Delete a document, using the token
         webTestClient.delete()
-                .uri("/api/v1/documents/" + createdDocument.getId())
+                .uri("/api/v1/documents/2")
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNoContent();
 
         // Step 8: Make a get details request to check 404 for the given author, using the token
         webTestClient.get()
-                .uri("/api/v1/authors/" + createdAuthor.getId())
+                .uri("/api/v1/authors/1")
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNotFound();
 
         // Step 9: Make a get details request to check 404 for the document, using the token
         webTestClient.get()
-                .uri("/api/v1/documents/" + createdDocument.getId())
+                .uri("/api/v1/documents/2")
                 .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                 .exchange()
                 .expectStatus().isNotFound();

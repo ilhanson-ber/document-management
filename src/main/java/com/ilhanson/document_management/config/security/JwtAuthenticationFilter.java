@@ -1,4 +1,4 @@
-package com.ilhanson.document_management.config;
+package com.ilhanson.document_management.config.security;
 
 
 import jakarta.servlet.FilterChain;
@@ -34,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        
+
         String username = jwtUtility.getUsernameFromToken(token);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

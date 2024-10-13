@@ -1,7 +1,7 @@
 package com.ilhanson.document_management.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ilhanson.document_management.config.JwtAuthenticationFilter;
+import com.ilhanson.document_management.config.security.JwtAuthenticationFilter;
 import com.ilhanson.document_management.dtos.*;
 import com.ilhanson.document_management.exceptions.ResourceNotFoundException;
 import com.ilhanson.document_management.services.DocumentService;
