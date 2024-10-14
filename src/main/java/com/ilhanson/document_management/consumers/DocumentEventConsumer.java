@@ -10,13 +10,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class DocumentEventConsumer {
 
-    @KafkaListener(topics = "${application.kafka.topic.document-updated}")
-    public void handleDocumentUpdated(String event) {
-        log.info("Document updated event received: {}", event);
-    }
+  @KafkaListener(topics = "${application.kafka.topic.document-updated}")
+  public void handleDocumentUpdated(String event) {
+    log.info("Document updated event received: {}", event);
+  }
 
-    @KafkaListener(topics = "${application.kafka.topic.document-deleted}")
-    public void handleDocumentDeleted(String event) {
-        log.info("Document deleted event received: {}", event);
-    }
+  @KafkaListener(topics = "${application.kafka.topic.document-deleted}")
+  public void handleDocumentDeleted(String event) {
+    log.info("Document deleted event received: {}", event);
+  }
 }

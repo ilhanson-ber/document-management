@@ -16,15 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class AuthenticationController {
 
-    private final AuthenticationService authenticationService;
+  private final AuthenticationService authenticationService;
 
-    @PostMapping("/login")
-    public AuthenticationResponseDTO login(@Valid @RequestBody LoginDTO loginDTO) {
-        return authenticationService.login(loginDTO);
-    }
+  @PostMapping("/login")
+  public AuthenticationResponseDTO login(@Valid @RequestBody LoginDTO loginDTO) {
+    return authenticationService.login(loginDTO);
+  }
 
-    @PostMapping("/signup")
-    public AuthenticationResponseDTO signup(@Valid @RequestBody SignupDTO signupDTO) {
-        return authenticationService.signup(signupDTO);
-    }
+  @PostMapping("/signup")
+  public AuthenticationResponseDTO signup(@Valid @RequestBody SignupDTO signupDTO) {
+    return authenticationService.signup(signupDTO);
+  }
 }

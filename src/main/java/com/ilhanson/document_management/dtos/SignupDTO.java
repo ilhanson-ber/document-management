@@ -16,25 +16,24 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SignupDTO {
 
-    @Null(message = "ID should be null or missing when creating a user")
-    private Long id;
+  @Null(message = "ID should be null or missing when creating a user")
+  private Long id;
 
-    @NotBlank(message = "First name can not be empty")
-    @Size(max = 100, message = "First name can not be longer than 100 characters")
-    private String firstName;
+  @NotBlank(message = "First name can not be empty")
+  @Size(max = 100, message = "First name can not be longer than 100 characters")
+  private String firstName;
 
-    @NotBlank(message = "Last name can not be empty")
-    @Size(max = 100, message = "Last name can not be longer than 100 characters")
-    private String lastName;
+  @NotBlank(message = "Last name can not be empty")
+  @Size(max = 100, message = "Last name can not be longer than 100 characters")
+  private String lastName;
 
-    @NotBlank(message = "Username can not be empty")
-    @Size(max = 100, message = "Username can not be longer than 100 characters")
-    private String username;
+  @NotBlank(message = "Username can not be empty")
+  @Size(max = 100, message = "Username can not be longer than 100 characters")
+  private String username;
 
-    @NotBlank(message = "Password can not be empty")
-    private String password;
+  @NotBlank(message = "Password can not be empty")
+  private String password;
 
-    @NotNull(message = "Role can not be empty")
-    private Role role;
-
+  @NotNull(message = "Role can not be empty")
+  private Role role;
 }

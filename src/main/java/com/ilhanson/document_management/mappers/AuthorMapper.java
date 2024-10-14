@@ -14,30 +14,30 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class AuthorMapper {
-    private final ModelMapper modelMapper;
-    private final ObjectMapper objectMapper;
+  private final ModelMapper modelMapper;
+  private final ObjectMapper objectMapper;
 
-    public AuthorDTO mapToDTO(Author author) {
-        return modelMapper.map(author, AuthorDTO.class);
-    }
+  public AuthorDTO mapToDTO(Author author) {
+    return modelMapper.map(author, AuthorDTO.class);
+  }
 
-    public AuthorDetailsDTO mapToDetailsDTO(Author author) {
-        return modelMapper.map(author, AuthorDetailsDTO.class);
-    }
+  public AuthorDetailsDTO mapToDetailsDTO(Author author) {
+    return modelMapper.map(author, AuthorDetailsDTO.class);
+  }
 
-    public Author mapToModel(AuthorCreateDTO author) {
-        return modelMapper.map(author, Author.class);
-    }
+  public Author mapToModel(AuthorCreateDTO author) {
+    return modelMapper.map(author, Author.class);
+  }
 
-    public Author mapToModel(AuthorUpdateDTO author) {
-        return modelMapper.map(author, Author.class);
-    }
+  public Author mapToModel(AuthorUpdateDTO author) {
+    return modelMapper.map(author, Author.class);
+  }
 
-    public String toJson(AuthorDetailsDTO authorDetailsDTO) throws JsonProcessingException {
-        return objectMapper.writeValueAsString(authorDetailsDTO);
-    }
+  public String toJson(AuthorDetailsDTO authorDetailsDTO) throws JsonProcessingException {
+    return objectMapper.writeValueAsString(authorDetailsDTO);
+  }
 
-    public AuthorDetailsDTO toDetailsDTO(String detailsJson) throws JsonProcessingException {
-        return objectMapper.readValue(detailsJson, AuthorDetailsDTO.class);
-    }
+  public AuthorDetailsDTO toDetailsDTO(String detailsJson) throws JsonProcessingException {
+    return objectMapper.readValue(detailsJson, AuthorDetailsDTO.class);
+  }
 }

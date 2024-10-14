@@ -12,21 +12,21 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class DocumentMapper {
-    private final ModelMapper modelMapper;
+  private final ModelMapper modelMapper;
 
-    public DocumentDTO mapToDTO(Document document) {
-        return modelMapper.map(document, DocumentDTO.class);
-    }
+  public DocumentDTO mapToDTO(Document document) {
+    return modelMapper.map(document, DocumentDTO.class);
+  }
 
-    public DocumentDetailsDTO mapToDetailsDTO(Document document) {
-        return modelMapper.map(document, DocumentDetailsDTO.class);
-    }
+  public DocumentDetailsDTO mapToDetailsDTO(Document document) {
+    return modelMapper.map(document, DocumentDetailsDTO.class);
+  }
 
-    public Document mapToModel(DocumentCreateDTO document) {
-        return modelMapper.map(document, Document.class);
-    }
+  public Document mapToModel(DocumentCreateDTO document) {
+    return modelMapper.map(document, Document.class);
+  }
 
-    public Document mapToModel(DocumentUpdateDTO document) {
-        return modelMapper.map(document, Document.class);
-    }
+  public Document mapToModel(DocumentUpdateDTO document) {
+    return modelMapper.map(document, Document.class);
+  }
 }

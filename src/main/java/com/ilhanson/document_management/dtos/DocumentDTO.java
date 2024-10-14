@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class DocumentDTO {
-    private Long id;
-    private String title;
-    private String body;
+  private Long id;
+  private String title;
+  private String body;
 }

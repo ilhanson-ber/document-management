@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 public class UserMapper {
-    private final ModelMapper modelMapper;
+  private final ModelMapper modelMapper;
 
-    public User mapToModel(SignupDTO user) {
-        return modelMapper.map(user, User.class);
-    }
+  public User mapToModel(SignupDTO user) {
+    return modelMapper.map(user, User.class);
+  }
 }

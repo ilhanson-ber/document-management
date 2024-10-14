@@ -20,42 +20,36 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 @Slf4j
 public class AuthenticationService {
-    private final UserRepository userRepository;
-    private final JwtUtility jwtUtility;
+  private final UserRepository userRepository;
+  private final JwtUtility jwtUtility;
 
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
+  private final PasswordEncoder passwordEncoder;
+  private final AuthenticationManager authenticationManager;
 
-    private final UserMapper userMapper;
+  private final UserMapper userMapper;
 
-    public AuthenticationResponseDTO login(LoginDTO loginDTO) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginDTO.getUsername(),
-                        loginDTO.getPassword()
-                )
-        );
+  public AuthenticationResponseDTO login(LoginDTO loginDTO) {
+    authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword()));
 
-        User user = userRepository.findByUsername(loginDTO.getUsername())
-                .orElseThrow();
-        String token = jwtUtility.generateToken(user);
+    User user = userRepository.findByUsername(loginDTO.getUsername()).orElseThrow();
+    String token = jwtUtility.generateToken(user);
 
-        return new AuthenticationResponseDTO(token);
+    return new AuthenticationResponseDTO(token);
+  }
+
+  public AuthenticationResponseDTO signup(SignupDTO signupDTO) {
+    User user = userMapper.mapToModel(signupDTO);
+    user.setPassword(passwordEncoder.encode(signupDTO.getPassword()));
+
+    User savedUser;
+    try {
+      savedUser = userRepository.save(user);
+    } catch (DataIntegrityViolationException e) {
+      throw new DuplicateKeyException("username", signupDTO.getUsername());
     }
 
-    public AuthenticationResponseDTO signup(SignupDTO signupDTO) {
-        User user = userMapper.mapToModel(signupDTO);
-        user.setPassword(passwordEncoder.encode(signupDTO.getPassword()));
-
-        User savedUser;
-        try {
-            savedUser = userRepository.save(user);
-        } catch (DataIntegrityViolationException e) {
-            throw new DuplicateKeyException("username", signupDTO.getUsername());
-
-        }
-
-        String token = jwtUtility.generateToken(savedUser);
-        return new AuthenticationResponseDTO(token);
-    }
+    String token = jwtUtility.generateToken(savedUser);
+    return new AuthenticationResponseDTO(token);
+  }
 }

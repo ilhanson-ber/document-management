@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,6 +14,5 @@ import lombok.NoArgsConstructor;
 // in a request body of a POST or UPDATE request
 // to associate new entities with the owner entity
 public class IdInputDTO {
-    @NotNull
-    private Long id;
+  @NotNull private Long id;
 }

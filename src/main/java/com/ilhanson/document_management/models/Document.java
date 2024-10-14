@@ -2,10 +2,9 @@ package com.ilhanson.document_management.models;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
-import lombok.*;
-
 import java.util.HashSet;
 import java.util.Set;
+import lombok.*;
 
 @Entity
 @Table(name = "document")
@@ -27,60 +26,59 @@ import java.util.Set;
 // a better comparison for null id objects
 public class Document implements Identifiable {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @EqualsAndHashCode.Include
+  private Long id;
 
-    @Size(min = 1)
-    @Column(name = "title", nullable = false, length = 200)
-    private String title;
+  @Size(min = 1)
+  @Column(name = "title", nullable = false, length = 200)
+  private String title;
 
-    @Size(min = 1)
-    @Column(name = "body", nullable = false)
-    private String body;
+  @Size(min = 1)
+  @Column(name = "body", nullable = false)
+  private String body;
 
-    @ManyToMany(mappedBy = "documents")
-    // shouldn't be final so that mappers work correctly
-    private Set<Author> authors = new HashSet<>();
+  @ManyToMany(mappedBy = "documents")
+  // shouldn't be final so that mappers work correctly
+  private Set<Author> authors = new HashSet<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "document_reference",
-            joinColumns = @JoinColumn(name = "document_id"),
-            inverseJoinColumns = @JoinColumn(name = "reference_id")
-    )
-    // shouldn't be final so that mappers work correctly
-    private Set<Document> references = new HashSet<>();
+  @ManyToMany
+  @JoinTable(
+      name = "document_reference",
+      joinColumns = @JoinColumn(name = "document_id"),
+      inverseJoinColumns = @JoinColumn(name = "reference_id"))
+  // shouldn't be final so that mappers work correctly
+  private Set<Document> references = new HashSet<>();
 
-    @ManyToMany(mappedBy = "references")
-    // shouldn't be final so that mappers work correctly
-    private Set<Document> referredBy = new HashSet<>();
+  @ManyToMany(mappedBy = "references")
+  // shouldn't be final so that mappers work correctly
+  private Set<Document> referredBy = new HashSet<>();
 
-    // As the owner of the relationship
-    // providing the utility method to keep both sides in sync
-    public void addReference(Document document) {
-        this.references.add(document);
-        document.getReferredBy().add(this);
-    }
+  // As the owner of the relationship
+  // providing the utility method to keep both sides in sync
+  public void addReference(Document document) {
+    this.references.add(document);
+    document.getReferredBy().add(this);
+  }
 
-    // As the owner of the relationship
-    // providing the utility method to keep both sides in sync
-    public void removeReference(Document document) {
-        this.references.remove(document);
-        document.getReferredBy().remove(this);
-    }
+  // As the owner of the relationship
+  // providing the utility method to keep both sides in sync
+  public void removeReference(Document document) {
+    this.references.remove(document);
+    document.getReferredBy().remove(this);
+  }
 
-    // Removes the data associations where the document
-    // is not the owner of the relationship.
-    // For owners, JPA takes care of it while removal
-    // For referencing ones (using mappedBy), we need to do it manually before removal
-    @PreRemove
-    private void prepareForRemoval() {
-        this.authors.forEach(author -> author.getDocuments().remove(this));
-        this.authors.clear();
+  // Removes the data associations where the document
+  // is not the owner of the relationship.
+  // For owners, JPA takes care of it while removal
+  // For referencing ones (using mappedBy), we need to do it manually before removal
+  @PreRemove
+  private void prepareForRemoval() {
+    this.authors.forEach(author -> author.getDocuments().remove(this));
+    this.authors.clear();
 
-        this.referredBy.forEach(document -> document.getReferences().remove(this));
-        this.referredBy.clear();
-    }
+    this.referredBy.forEach(document -> document.getReferences().remove(this));
+    this.referredBy.clear();
+  }
 }

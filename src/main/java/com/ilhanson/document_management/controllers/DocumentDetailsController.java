@@ -13,26 +13,25 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/v1/documents/{id}")
 @AllArgsConstructor
 public class DocumentDetailsController {
-    private final DocumentService documentService;
+  private final DocumentService documentService;
 
-    @GetMapping
-    public DocumentDetailsDTO getDocumentDetails(@PathVariable Long id) {
-        return documentService.getDocumentDetails(id);
-    }
+  @GetMapping
+  public DocumentDetailsDTO getDocumentDetails(@PathVariable Long id) {
+    return documentService.getDocumentDetails(id);
+  }
 
-    @PutMapping
-    public DocumentDetailsDTO updateDocument(
-            @PathVariable Long id,
-            @Valid @RequestBody DocumentUpdateDTO documentUpdateDTO) {
-        if (!id.equals(documentUpdateDTO.getId())) {
-            throw new UnprocessableContentException();
-        }
-        return documentService.updateDocument(documentUpdateDTO);
+  @PutMapping
+  public DocumentDetailsDTO updateDocument(
+      @PathVariable Long id, @Valid @RequestBody DocumentUpdateDTO documentUpdateDTO) {
+    if (!id.equals(documentUpdateDTO.getId())) {
+      throw new UnprocessableContentException();
     }
+    return documentService.updateDocument(documentUpdateDTO);
+  }
 
-    @DeleteMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteDocument(@PathVariable Long id) {
-        documentService.deleteDocument(id);
-    }
+  @DeleteMapping
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteDocument(@PathVariable Long id) {
+    documentService.deleteDocument(id);
+  }
 }

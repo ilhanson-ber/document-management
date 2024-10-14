@@ -13,26 +13,25 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/v1/authors/{id}")
 @AllArgsConstructor
 public class AuthorDetailsController {
-    private final AuthorService authorService;
+  private final AuthorService authorService;
 
-    @GetMapping
-    public AuthorDetailsDTO getAuthorDetails(@PathVariable Long id) {
-        return authorService.getAuthorDetails(id);
-    }
+  @GetMapping
+  public AuthorDetailsDTO getAuthorDetails(@PathVariable Long id) {
+    return authorService.getAuthorDetails(id);
+  }
 
-    @PutMapping
-    public AuthorDetailsDTO updateAuthor(
-            @PathVariable Long id,
-            @Valid @RequestBody AuthorUpdateDTO authorUpdateDTO) {
-        if (!id.equals(authorUpdateDTO.getId())) {
-            throw new UnprocessableContentException();
-        }
-        return authorService.updateAuthor(authorUpdateDTO);
+  @PutMapping
+  public AuthorDetailsDTO updateAuthor(
+      @PathVariable Long id, @Valid @RequestBody AuthorUpdateDTO authorUpdateDTO) {
+    if (!id.equals(authorUpdateDTO.getId())) {
+      throw new UnprocessableContentException();
     }
+    return authorService.updateAuthor(authorUpdateDTO);
+  }
 
-    @DeleteMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteAuthor(@PathVariable Long id) {
-        authorService.deleteAuthor(id);
-    }
+  @DeleteMapping
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteAuthor(@PathVariable Long id) {
+    authorService.deleteAuthor(id);
+  }
 }
